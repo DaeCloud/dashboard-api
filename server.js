@@ -91,6 +91,8 @@ fastify.get("/speed", async (request, reply) => {
   };
 });
 
-fastify.listen({ port: 3000 }, (err, address) => {
+fastify.listen({ port: 3000, host: '0.0.0.0' }, (err, address) => {
   if (err) throw err;
+  console.log(`Server listening at ${address}`);
 });
+
