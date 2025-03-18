@@ -1,33 +1,33 @@
-const fastify = require("fastify")({ logger: true });
+const express = require("express");
 const ical = require("ical");
 const axios = require("axios");
 const moment = require("moment");
 
 require("dotenv").config();
 
-fastify.get("/", async (request, reply) => {
-  reply.type("application/json").code(200);
-  return { hello: "world" };
+const app = express();
+const port = 3000;
+
+app.get("/", (req, res) => {
+  res.status(200).json({ hello: "world" });
 });
 
-fastify.get("/weather", async (request, reply) => {
+app.get("/weather", async (req, res) => {
   const apiKey = process.env.WEATHERAPI_KEY; // Replace with your OpenWeatherMap API key
   const lat = process.env.WEATHER_LAT; // Replace with the latitude of the location you want to get weather info for
   const lon = process.env.WEATHER_LON; // Replace with the longitude of the location you want to get weather info for
   const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
 
   try {
-    const response = await fetch(url);
-    const weatherData = await response.json();
-    reply.type("application/json").code(200);
-    return { weather: weatherData };
+    const response = await axios.get(url);
+    const weatherData = response.data;
+    res.status(200).json({ weather: weatherData });
   } catch (error) {
-    reply.type("application/json").code(500);
-    return { error: "Failed to fetch weather data" };
+    res.status(500).json({ error: "Failed to fetch weather data" });
   }
 });
 
-fastify.get("/calendar", async (request, reply) => {
+app.get("/calendar", async (req, res) => {
   try {
     const url = process.env.ICAL_URL; // Replace with the actual URL of your .ics file
     const response = await axios.get(url);
@@ -45,26 +45,24 @@ fastify.get("/calendar", async (request, reply) => {
       );
     });
 
-    reply.type("application/json").code(200);
-    return { calendar: filteredEvents };
+    res.status(200).json({ calendar: filteredEvents });
   } catch (error) {
-    reply.type("application/json").code(500);
-    return { error: "Failed to fetch or parse calendar data" };
+    res.status(500).json({ error: "Failed to fetch or parse calendar data" });
   }
 });
 
-fastify.get("/speed", async (request, reply) => {
+app.get("/speed", async (req, res) => {
   const url = process.env.SPEED_DOWN_URL;
   const uploadUrl = process.env.SPEED_UP_URL; // Replace with your upload endpoint
 
   // Measure download speed
   const startTime = performance.now();
-  const response = await fetch(url);
-  const blob = await response.blob();
+  const response = await axios.get(url, { responseType: "blob" });
+  const blob = response.data;
   const endTime = performance.now();
   const duration = (endTime - startTime) / 1000; // Convert to seconds
 
-  const fileSizeMB = 100; // File size in MB
+  const fileSizeMB = process.env.SPEED_FILE_SIZE; // File size in MB
   const downloadSpeedMbps = (fileSizeMB * 8) / duration; // Calculate speed in Mbps
 
   console.log(`Download time: ${duration} seconds`);
@@ -72,10 +70,7 @@ fastify.get("/speed", async (request, reply) => {
 
   // Measure upload speed
   const uploadStartTime = performance.now();
-  const uploadResponse = await fetch(uploadUrl, {
-    method: "POST",
-    body: blob,
-  });
+  const uploadResponse = await axios.post(uploadUrl, blob);
   const uploadEndTime = performance.now();
   const uploadDuration = (uploadEndTime - uploadStartTime) / 1000; // Convert to seconds
 
@@ -84,15 +79,12 @@ fastify.get("/speed", async (request, reply) => {
   console.log(`Upload time: ${uploadDuration} seconds`);
   console.log(`Upload speed: ${uploadSpeedMbps.toFixed(2)} Mbps`);
 
-  reply.type("application/json").code(200);
-  return {
+  res.status(200).json({
     downloadSpeed: `${downloadSpeedMbps.toFixed(2)}`,
     uploadSpeed: `${uploadSpeedMbps.toFixed(2)}`,
-  };
+  });
 });
 
-fastify.listen({ port: 3000, host: '0.0.0.0' }, (err, address) => {
-  if (err) throw err;
-  console.log(`Server listening at ${address}`);
+app.listen(port, () => {
+  console.log(`Server listening at http://0.0.0.0:${port}`);
 });
-
