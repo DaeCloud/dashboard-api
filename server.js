@@ -54,6 +54,8 @@ app.get("/calendar", async (req, res) => {
 app.get("/speed", async (req, res) => {
   const url = process.env.SPEED_DOWN_URL;
   const uploadUrl = process.env.SPEED_UP_URL; // Replace with your upload endpoint
+  const username = process.env.UPLOAD_USERNAME; // Your username
+  const password = process.env.UPLOAD_PASSWORD; // Your password
 
   // Measure download speed
   const startTime = performance.now();
@@ -70,7 +72,12 @@ app.get("/speed", async (req, res) => {
 
   // Measure upload speed
   const uploadStartTime = performance.now();
-  const uploadResponse = await axios.post(uploadUrl, blob);
+  const uploadResponse = await axios.post(uploadUrl, blob, {
+    auth: {
+      username: username,
+      password: password,
+    },
+  });
   const uploadEndTime = performance.now();
   const uploadDuration = (uploadEndTime - uploadStartTime) / 1000; // Convert to seconds
 
