@@ -9,6 +9,7 @@ const port = 3000;
 app.get("/speed", async (req, res) => {
   const url = process.env.SPEED_DOWN_URL;
   const numDownloads = process.env.NUM_DOWNLOADS || 5;
+  const fileSizeMB = process.env.SPEED_FILE_SIZE;
 
   const downloadPromises = [];
     const startTime = performance.now();
